@@ -1,0 +1,18 @@
+{
+  "name": "go-cq",
+  "version": "1.0.0",
+  "description": "QQ bot",
+  "main": "index.js",
+  "scripts": {
+    "dev": "node ./index.js"
+  },
+  "type": "module",
+  "license": "ISC",
+  "dependencies": {
+    "dotenv": "^16.0.3",
+    "lowdb": "^5.1.0",
+    "moment": "^2.29.4",
+    "openweather-apis": "^4.4.2",
+    "ws": "^8.12.1"
+  }
+}
