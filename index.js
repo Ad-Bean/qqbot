@@ -32,7 +32,7 @@ const init = async () => {
 init();
 
 const logger = (msg) => {
-  const current = moment().format('YYYY-MM-DD hh:mm:ss');
+  const current = moment().format('YYYY-MM-DD HH:mm:ss');
   console.log(`[${current}]: ${msg}`);
 };
 
@@ -70,7 +70,7 @@ ws.onmessage = (e) => {
 
   if (post_type === 'message') {
     if (message.startsWith('打卡：')) {
-      const text = `${moment().format('YYYY-MM-DD hh:mm:ss dddd')} 打卡成功`;
+      const text = `${moment().format('YYYY-MM-DD HH:mm:ss dddd')} 打卡成功`;
       const buffer = JSON.stringify(
         makeSendGroupCGBody(group_id, [
           { type: 'at', data: { qq: user_id } },
@@ -123,7 +123,7 @@ ws.onmessage = (e) => {
     if (message === '天气') {
       GetWeather(DB_URL).then((res) => {
         const text =
-          `${moment().format('YYYY-MM-DD hh:mm:ss dddd')} \n` + res.join('\n');
+          `${moment().format('YYYY-MM-DD HH:mm:ss dddd')} \n` + res.join('\n');
         const buffer = JSON.stringify(
           makeSendGroupCGBody(group_id, [
             { type: 'text', data: { text: text } },
@@ -138,7 +138,7 @@ ws.onmessage = (e) => {
       InsertNewCity(city, DB_URL);
 
       const text = `${moment().format(
-        'YYYY-MM-DD hh:mm:ss dddd'
+        'YYYY-MM-DD HH:mm:ss dddd'
       )} 城市添加成功`;
       const buffer = JSON.stringify(
         makeSendGroupCGBody(group_id, [
@@ -297,7 +297,7 @@ const makeRecord = (user_id, sender, message) => {
   const record = {
     id: user_id,
     name: sender.card ? sender.card : sender.nickname,
-    time: moment().format('YYYY-MM-DD hh:mm:ss'),
+    time: moment().format('YYYY-MM-DD HH:mm:ss'),
     weekday: moment().format('dddd'),
     record: message.substring(3),
   };
@@ -306,7 +306,7 @@ const makeRecord = (user_id, sender, message) => {
 };
 
 const broadcast = async () => {
-  const hhmm = moment().format('hh:mm');
+  const hhmm = moment().format('HH:mm');
   const ss = moment().format('ss');
   const wk = moment().format('dddd');
 
@@ -333,7 +333,7 @@ const broadcast = async () => {
   } else if (hhmm === '08:00' && ss <= 4 && ss >= 0) {
     GetWeather(DB_URL).then((res) => {
       const text =
-        `早上好，现在是 ${moment().format('YYYY-MM-DD hh:mm:ss dddd')} \n` +
+        `早上好，现在是 ${moment().format('YYYY-MM-DD HH:mm:ss dddd')} \n` +
         res.join('\n') +
         '\n新的一天，大家加油！';
       const buffer = JSON.stringify(
