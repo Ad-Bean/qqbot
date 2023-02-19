@@ -54,9 +54,10 @@ ws.onmessage = (e) => {
     user_id,
     sender,
     message_id,
+    target_id,
   } = JSON.parse(e.data);
 
-  if (post_type === 'notice') {
+  if (post_type === 'notice' && target_id == process.env.BOT_ID) {
     ws.send(
       JSON.stringify(
         makeSendGroupCGBody(group_id, [
