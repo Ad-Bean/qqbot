@@ -482,8 +482,9 @@ const reminders = [
   { hhmm: '08:00', message: '早上好' },
   { hhmm: '10:00', message: '早上好' },
   { hhmm: '12:00', message: '中午好' },
-  { hhmm: '15:00', message: '下午好' },
-  { hhmm: '17:00', message: '下午好' },
+  { hhmm: '14:00', message: '中午好' },
+  { hhmm: '16:00', message: '下午好' },
+  { hhmm: '18:00', message: '下午好' },
   { hhmm: '20:00', message: '晚上好' },
   { hhmm: '22:00', message: '晚上好' },
 ];
@@ -497,20 +498,28 @@ const todoList = async () => {
   for (const reminder of reminders) {
     if (hhmm === reminder.hhmm && ss <= 4 && ss >= 0) {
       GetAllTodo(DB_URL).then((res) => {
-        if (res.length) {
-          res.forEach((todo) => {
-            if (moment(todo.time).isSame(today, 'day') && !todo.done) {
-              const text = `${reminder.message}，现在是 ${wk} ${hhmm}，今天你的任务完成了吗：${todo.todo}`;
-              ws.send(
-                JSON.stringify(
-                  makeSendGroupCGBody(process.env.GROUP_ID, [
-                    { type: 'at', data: { qq: todo.id } },
-                    { type: 'text', data: { text: text } },
-                  ])
-                )
-              );
-            }
-          });
+        const greeting = `${reminder.message}，现在是${wk} ${hhmm}，今天你的任务完成了吗：\n`;
+        const cgbody = [];
+        res?.map((todo) => {
+          if (moment(todo.time).isSame(today, 'day') && !todo.done) {
+            cgbody.push({ type: 'at', data: { qq: todo.id } });
+            cgbody.push({ type: 'text', data: { text: todo.todo + '\n' } });
+          }
+        });
+        if (cgbody.length) {
+          ws.send(
+            JSON.stringify(
+              makeSendGroupCGBody(process.env.GROUP_ID, [
+                { type: 'text', data: { text: greeting } },
+                ...cgbody,
+              ])
+            )
+          );
+        } else {
+          sendGroupMessage(
+            group_id,
+            `${reminder.message}，现在是${wk} ${hhmm}，今天还没有待办任务！`
+          );
         }
       });
     }
