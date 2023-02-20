@@ -11,6 +11,13 @@ import {
   InsertNewFood,
 } from './model/food.js';
 import * as dotenv from 'dotenv';
+import {
+  GetAllTodo,
+  GetTodayTodoById,
+  GetTodoById,
+  InsertNewTodo,
+  UpdateTodoByIndex,
+} from './model/todolist.js';
 
 const WS_URL = 'ws://localhost:8686';
 const HTTP_URL = 'http://localhost:5700';
@@ -25,7 +32,7 @@ const init = async () => {
   dotenv.config();
   moment.locale('zh-CN');
   await db.read();
-  db.data ||= { records: [], cities: [], food: [], recommend: [] };
+  db.data ||= { records: [], cities: [], food: [], recommend: [], todo: [] };
   await db.write();
 };
 
@@ -189,7 +196,11 @@ ws.onmessage = (e) => {
         '发送【吃什么】随机抽取自定义和推荐食物',
         '发送【我想吃：麦当劳 麦当劳】进行添加自定义食物',
         '\n',
+        '发送【查询待办】查看所有当日待办',
+        '发送【完成：序号】完成当日指定待办',
+        '\n',
         '戳一戳机器人，提醒豪哥背单词',
+        '发送【提醒豪哥】提醒豪哥该背单词了',
       ];
 
       ws.send(
@@ -271,6 +282,119 @@ ws.onmessage = (e) => {
         });
       });
     }
+
+    if (message.startsWith('每日待办：')) {
+      const todo = message.substring(5);
+      const newTodo = {
+        id: user_id,
+        name: sender.card ? sender.card : sender.nickname,
+        todo: todo,
+        time: moment().format('YYYY-MM-DD HH:mm:ss'),
+        done: false,
+      };
+
+      InsertNewTodo(newTodo, DB_URL).then((res) => {
+        ws.send(
+          JSON.stringify(
+            makeSendGroupCGBody(group_id, [
+              { type: 'at', data: { qq: user_id } },
+              {
+                type: 'text',
+                data: {
+                  text: '添加待办成功，将在每日固定时间提醒你完成任务，完成请输入【完成：序号】如【完成：1】完成当日第一条待办',
+                },
+              },
+            ])
+          )
+        );
+      });
+    }
+
+    if (message === '查询待办') {
+      const today = moment().format('YYYY-MM-DD HH:mm:ss');
+      GetAllTodo(DB_URL).then((res) => {
+        let todo = '';
+        res?.map((t, idx) => {
+          if (moment(t.time).isSame(today, 'day')) {
+            todo += `[${idx + 1}]: ${moment(t.time).format('HH:mm')} ${
+              t.name
+            }：${t.todo} ${t.done ? '（完成）' : '（未完成）'}\n`;
+          }
+        });
+
+        if (todo) {
+          const text =
+            `现在是 ${moment().format(
+              'HH:mm:ss dddd'
+            )}，今天所有成员的待办任务：\n` +
+            todo +
+            '使用【完成：序号】完成指定序号待办任务';
+          sendGroupMessage(group_id, text);
+        } else {
+          sendGroupMessage(
+            group_id,
+            '今天暂未有待办任务，使用【每日待办：内容】添加每日待办清单'
+          );
+        }
+      });
+    }
+
+    if (message.startsWith('完成：')) {
+      const idx = message.substring(3);
+      UpdateTodoByIndex(idx - 1, user_id, DB_URL).then((res) => {
+        if (res) {
+          ws.send(
+            JSON.stringify(
+              makeSendGroupCGBody(group_id, [
+                { type: 'at', data: { qq: user_id } },
+                {
+                  type: 'text',
+                  data: { text: '恭喜你，你已完成该任务，继续加油！' },
+                },
+              ])
+            )
+          );
+        } else {
+          ws.send(
+            JSON.stringify(
+              makeSendGroupCGBody(group_id, [
+                { type: 'at', data: { qq: user_id } },
+                {
+                  type: 'text',
+                  data: {
+                    text: '完成任务失败，你不是本人或任务已完成！',
+                  },
+                },
+              ])
+            )
+          );
+        }
+      });
+    }
+
+    if (message === '提醒豪哥') {
+      const newTodo = {
+        id: process.env.PEANUT_ID,
+        name: '花生',
+        todo: '该背单词了',
+        time: moment().format('YYYY-MM-DD HH:mm:ss'),
+        done: false,
+      };
+
+      InsertNewTodo(newTodo, DB_URL).then((res) => {
+        ws.send(
+          JSON.stringify(
+            makeSendGroupCGBody(group_id, [
+              { type: 'at', data: { qq: process.env.PEANUT_ID } },
+              {
+                type: 'text',
+                data: { text: '豪哥，该背单词了！！！' },
+              },
+            ])
+          )
+        );
+      });
+    }
   }
 };
 
@@ -279,6 +403,14 @@ ws.onerror = (e) => {
 };
 
 export { logger };
+
+const sendGroupMessage = (group_id, text) => {
+  ws.send(
+    JSON.stringify(
+      makeSendGroupCGBody(group_id, [{ type: 'text', data: { text: text } }])
+    )
+  );
+};
 
 const makeSendGroupCGBody = (group_id, msg) => {
   const obj = {
@@ -346,4 +478,44 @@ const broadcast = async () => {
   }
 };
 
+const reminders = [
+  { hhmm: '08:00', message: '早上好' },
+  { hhmm: '10:00', message: '早上好' },
+  { hhmm: '12:00', message: '中午好' },
+  { hhmm: '15:00', message: '下午好' },
+  { hhmm: '17:00', message: '下午好' },
+  { hhmm: '20:00', message: '晚上好' },
+  { hhmm: '22:00', message: '晚上好' },
+];
+
+const todoList = async () => {
+  const hhmm = moment().format('HH:mm');
+  const ss = moment().format('ss');
+  const wk = moment().format('dddd');
+  const today = moment().format('YYYY-MM-DD HH:mm:ss');
+
+  for (const reminder of reminders) {
+    if (hhmm === reminder.hhmm && ss <= 4 && ss >= 0) {
+      GetAllTodo(DB_URL).then((res) => {
+        if (res.length) {
+          res.forEach((todo) => {
+            if (moment(todo.time).isSame(today, 'day') && !todo.done) {
+              const text = `${reminder.message}，现在是 ${wk} ${hhmm}，今天你的任务完成了吗：${todo.todo}`;
+              ws.send(
+                JSON.stringify(
+                  makeSendGroupCGBody(process.env.GROUP_ID, [
+                    { type: 'at', data: { qq: todo.id } },
+                    { type: 'text', data: { text: text } },
+                  ])
+                )
+              );
+            }
+          });
+        }
+      });
+    }
+  }
+};
+
 setInterval(broadcast, 5000);
+setInterval(todoList, 5000);
