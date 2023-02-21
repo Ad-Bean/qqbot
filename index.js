@@ -395,6 +395,22 @@ ws.onmessage = (e) => {
         );
       });
     }
+
+    if (message.startsWith('提问：')) {
+      const q = message.substring(3);
+      fetch(`https://v1.apigpt.cn/?q=${q}&apitype=sql`)
+        .then((res) => res.json())
+        .then((res) => {
+          if (res.ChatGPT_Answer) {
+            sendGroupMessage(group_id, res.ChatGPT_Answer);
+          } else {
+            throw new Error('唔好意思，我唔知啊！');
+          }
+        })
+        .catch((err) => {
+          sendGroupMessage(group_id, '唔好意思，我唔知啊！');
+        });
+    }
   }
 };
 
