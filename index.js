@@ -18,6 +18,7 @@ import {
   InsertNewTodo,
   UpdateTodoByIndex,
 } from './model/todolist.js';
+import { rollDice } from './utils.js';
 
 const WS_URL = 'ws://localhost:8686';
 const HTTP_URL = 'http://localhost:5700';
@@ -410,6 +411,17 @@ ws.onmessage = (e) => {
         .catch((err) => {
           sendGroupMessage(group_id, '唔好意思，我唔知啊！');
         });
+    }
+
+    if (message.startsWith('roll：')) {
+      const result = rollDice();
+      const text = `
+        ${message.substring(5)}
+        1-3：是
+        4-6：否
+        你的结果是：${result}
+        `;
+      sendGroupMessage(group_id, text);
     }
   }
 };
