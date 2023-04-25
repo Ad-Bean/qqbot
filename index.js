@@ -490,15 +490,22 @@ const broadcast = async () => {
         ])
       )
     );
-  } else if (hhmm === '08:00' && ss <= 4 && ss >= 0) {
+  } else if (
+    moment().isBetween(
+      moment({ hour: 8, minute: 0, second: 0 }),
+      moment({ hour: 8, minute: 0, second: 4 })
+    )
+  ) {
     GetWeather(DB_URL).then((res) => {
       const text =
         `早上好，现在是 ${moment().format('YYYY-MM-DD HH:mm:ss dddd')} \n` +
         res.join('\n') +
-        '\n新的一天，大家加油！';
+        '\n新的一天，大家加油！\n';
       const buffer = JSON.stringify(
         makeSendGroupCGBody(process.env.GROUP_ID, [
           { type: 'text', data: { text: text } },
+          { type: 'at', data: { qq: process.env.PEANUT_ID } },
+          { type: 'text', data: { text: '豪哥，记得背单词' } },
         ])
       );
       ws.send(buffer);
