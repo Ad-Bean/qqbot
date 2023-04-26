@@ -552,7 +552,7 @@ const todoList = async () => {
           );
         } else {
           sendGroupMessage(
-            group_id,
+            process.env.GROUP_ID,
             `${reminder.message}，现在是${wk} ${hhmm}，今天还没有待办任务！`
           );
         }
