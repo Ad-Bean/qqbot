@@ -373,7 +373,7 @@ ws.onmessage = (e) => {
       });
     }
 
-    if (message === '提醒豪哥') {
+    if (message === '提醒豪哥' || message === '本群之耻') {
       const newTodo = {
         id: process.env.PEANUT_ID,
         name: '花生',
@@ -514,13 +514,13 @@ const broadcast = async () => {
 };
 
 const reminders = [
-  { hhmm: '08:00', message: '早上好' },
+  // { hhmm: '08:00', message: '早上好' },
   { hhmm: '10:00', message: '早上好' },
-  { hhmm: '12:00', message: '中午好' },
+  // { hhmm: '12:00', message: '中午好' },
   { hhmm: '14:00', message: '中午好' },
-  { hhmm: '16:00', message: '下午好' },
+  // { hhmm: '16:00', message: '下午好' },
   { hhmm: '18:00', message: '下午好' },
-  { hhmm: '20:00', message: '晚上好' },
+  // { hhmm: '20:00', message: '晚上好' },
   { hhmm: '22:00', message: '晚上好' },
 ];
 
